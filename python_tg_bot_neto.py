@@ -5,6 +5,12 @@ from random import choice
 import os
 from dotenv import load_dotenv
 
+import json
+from datetime import datetime
+import time
+
+from telebot import types
+
 
 dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
 #print(dotenv_path)
@@ -16,13 +22,15 @@ token =   os.environ.get('token')
 
 bot = telebot.TeleBot(token)
 
+
+
 dictionary = {
     'greet': ['#NAME#, здравствуйте!', '#NAME#, добрый день!', '#NAME#, доброго дня!'],
-    'thank': ['Спасибо за выполненное домашнее задание к блоку #BLOCK#!', 'Благодарю, что выполнили домашнее задание к блоку #BLOCK#!',
-        'Здорово, что Вы сделали домашнее задание к блоку #BLOCK#!',
-        'Здорово, что Вы выполнили домашнее задание к блоку #BLOCK#!',
-        'Благодарим за выполнение домашнего задания к блоку #BLOCK#!',
-        'Благодарю за выполненную работу к блоку #BLOCK#!'
+    'thank': ['Спасибо за выполненное домашнее задание к блоку *#BLOCK#*!', 'Благодарю, что выполнили домашнее задание к блоку *#BLOCK#*!',
+        'Здорово, что Вы сделали домашнее задание к блоку *#BLOCK#*!',
+        'Здорово, что Вы выполнили домашнее задание к блоку *#BLOCK#*!',
+        'Благодарим за выполнение домашнего задания к блоку *#BLOCK#*!',
+        'Благодарю за выполненную работу к блоку *#BLOCK#*!'
     ],
     'success': ['Вы удачно реализовали …',
         'Отмечу, что получилось …',
@@ -64,11 +72,127 @@ commands = {
     'answer': {'descr': 'This command creates an answer. It needs arguments in square braces.', 'args': [
         {'code': 'NAME', 'name': 'Имя слушателя', 'type': 'string'},
         {'code': 'BLOCK', 'name': 'Название блока', 'type': 'string'},
-        {'code': 'SUCCESS', 'name': 'Решение принято?', 'type': 'Y/N'},
+        {'code': 'SUCCESS', 'name': 'Решение принято? Y = Да, N = Нет', 'type': 'boolean'},
         ],
         'example': '/answer [Петр] [Базовые функции PHP] [Y]'
     }
 }
+
+#dictionaryStr = json.JSONEncoder().encode(dictionary)
+#commandsStr = json.JSONEncoder().encode(commands)
+
+#print(dictionaryStr, commandsStr)
+
+#dictionary = os.environ.get('dictionary')
+#commands = os.environ.get('commands')
+
+data_folder = "bot_data"
+
+def extractHistory(str = '{}'):
+    try:
+        h = json.JSONDecoder().decode(str)
+    except Error:
+        h = {}
+    return h
+
+def addHistory(f, history):
+    f.write(json.JSONEncoder().encode(history))
+
+def hist(userId, txt):
+
+    markup = None
+
+    ans = ''
+    lastCode = ''
+    isCommand = False
+    if(txt[0] == '/'):
+        isCommand = True
+
+    global data_folder
+
+    user_folder = data_folder + f'/{userId}'
+    if not os.path.isdir(user_folder):
+        os.makedirs(user_folder)
+
+    path = user_folder + '/history.json'
+    print('path', path)
+
+    historyStr = ''
+    try:
+        f = open(path, 'r')
+        historyStr = f.read()
+        f.close()
+    except FileNotFoundError:
+        pass
+
+    print('historyStr', historyStr)
+
+    #os.remove(path)
+
+    if(len(historyStr) == 0):
+        history = extractHistory()
+    else:
+        history = extractHistory(historyStr)
+    print('history', history)
+
+    command = commands['answer']
+    k = 0
+    for i in range(0, len(command['args'])):
+        code =  command['args'][i]['code']
+        if(code not in history):
+            history[code] = None
+            ans = 'Введите *' + command['args'][i]['name'] + '*'
+            lastCode = code
+            break
+        else:
+            if history[code] == None:
+                if not isCommand:
+                    k += 1
+                    history[code] = txt
+                else:
+                    ans = 'Введите *' + command['args'][i]['name'] + '*'
+                    lastCode = code
+                    break
+            else:
+                k +=1
+
+    if(k == len(command['args'])):
+        #генерим
+        success = history['SUCCESS'] == 'Y'
+        for key in dictionary:
+            #print(key)
+            part = choice(dictionary[key])
+
+            if(success and key == 'result_neg' or not success and key == 'result_good'):
+                continue;
+
+            for i in history:
+                repl = ''
+                if(history[i] is not None):
+                    repl = history[i]
+                part = part.replace(f'#{i}#', repl)
+
+            ans += part+ '\n\n'
+
+        os.remove(path)
+
+    else:
+        print(k)
+        print(history)
+        f = open(path, 'w+')
+        f.write(json.JSONEncoder().encode(history))
+        f.close()
+
+    if(len(ans) == 0):
+        ans = 'I dont\'t understand you'
+
+    if lastCode == 'SUCCESS':
+        markup = types.ReplyKeyboardMarkup(row_width=2)
+        itembtn1 = types.KeyboardButton('Y')
+        itembtn2 = types.KeyboardButton('N')
+        markup.add(itembtn1, itembtn2)
+
+    return ans, markup
 
 
 @bot.message_handler(commands=['help'])
@@ -90,56 +214,21 @@ def help(message):
                 for i in range(0, len(args)):
                     help += args[i]['name'] + ': ' + args[i]['type'] + '\n'
 
-        if('example' in command):
-            help += 'Example: ' + command['example'] + '\n'
 
     bot.send_message(message.chat.id, help)
 
 @bot.message_handler(commands=['answer'])
+@bot.message_handler()
 def help(message):
+    #print(message)
 
-    tmp = message.text.strip()[1:]
-    #print(tmp)
+    userId = message.from_user.id
 
-    tmp1 = tmp.split(maxsplit=1)
-    #print(tmp1)
-
-    ans = '';
-    args = []
-    if(len(tmp1) > 1):
-        args = []
-        args = re.findall(r'\[.+?\]', tmp1[1])
-        #print(args)
-        args = list(map(lambda x: x[1:len(x)-1], args))
-        print(args)
-        #ans = ' '.join(args)
-
-        if(len(args) == 0):
-            ans = 'Input name, block and success'
-        else:
-            name = args[0]
-            block = '...'
-            success = False
-            if(len(args) > 1):
-                block = args[1]
-            if(len(args) > 2):
-                success = args[2] == 'Y'
-
-            print(success)
-
-            for key in dictionary:
-                #print(key)
-                part = choice(dictionary[key])
-
-                if(success and key == 'result_neg' or not success and key == 'result_good'):
-                    continue;
-
-                ans += part.replace('#NAME#', name).replace('#BLOCK#', '"' + block + '"') + '\n\n'
-    else:
-        ans = 'no arguments'
+    ans, markup = hist(userId, message.text)
 
 
-    bot.reply_to(message, ans)
+
+    bot.reply_to(message, ans, parse_mode='Markdown', reply_markup=markup)
 
 
 other_commands = []
@@ -159,10 +248,6 @@ def other(message):
     if(len(msg) > 0):
         bot.send_message(message.chat.id, msg)
 
-@bot.message_handler()
-def help(message):
-    help = 'I don\'t understand you!';
-    bot.send_message(message.chat.id, help)
 
 
 bot.polling(none_stop=True)
