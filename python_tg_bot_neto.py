@@ -123,7 +123,8 @@ def hist(userId, txt):
         historyStr = f.read()
         f.close()
     except FileNotFoundError:
-        pass
+        if(isCommand == False):
+            return 'Enter command', None
 
     print('historyStr', historyStr)
 
@@ -191,6 +192,8 @@ def hist(userId, txt):
         itembtn1 = types.KeyboardButton('Y')
         itembtn2 = types.KeyboardButton('N')
         markup.add(itembtn1, itembtn2)
+    else:
+        markup = None
 
     return ans, markup
 
