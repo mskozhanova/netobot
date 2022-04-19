@@ -73,9 +73,8 @@ dictionary = {
 
 
 commands = {
-    #'add' : {'descr' : 'add '},
     'help' : {'descr' : 'This command shows help.'},
-    'answer': {'descr': 'This command creates an answer. The bot will ask student\'s name, task title and result', 'args': [
+    'answer': {'descr': 'This command creates an answer. The bot will ask - ', 'args': [
         {'code': 'NAME', 'name': 'Имя слушателя', 'type': 'string'},
         {'code': 'BLOCK', 'name': 'Название блока', 'type': 'string'},
         {'code': 'SUCCESS', 'name': 'Решение принято? Y = Да, N = Нет', 'type': 'boolean'},
@@ -92,6 +91,14 @@ commands = {
 
 #dictionary = os.environ.get('dictionary')
 #commands = os.environ.get('commands')
+
+arr = []
+for cmd in commands:
+    command = commands[cmd]
+    #print(command)
+    arr.append(telebot.types.BotCommand(f'/{cmd}', command['descr']))
+
+bot.set_my_commands(arr)
 
 data_folder = "bot_data"
 
