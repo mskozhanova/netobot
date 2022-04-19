@@ -48,6 +48,12 @@ dictionary = {
          'В дальнейшем вы можете…',
          'Также советую обратить внимание на…'
          ],
+         'asks': [
+             'Отвечаю на Ваш вопрос - ...',
+             'Ответ на Ваш вопрос - ',
+             'Позвольте ответить на вопрос - ',
+             'Вопрос интересный, вот ответ - '
+             ],
     'result_good': [
             'Желаю удачи в воплощении вашего проекта!',
             'Удачи в дальнейшем обучении!',
@@ -69,10 +75,11 @@ dictionary = {
 commands = {
     #'add' : {'descr' : 'add '},
     'help' : {'descr' : 'This command shows help.'},
-    'answer': {'descr': 'This command creates an answer. It needs arguments in square braces.', 'args': [
+    'answer': {'descr': 'This command creates an answer. The bot will ask student\'s name, task title and result', 'args': [
         {'code': 'NAME', 'name': 'Имя слушателя', 'type': 'string'},
         {'code': 'BLOCK', 'name': 'Название блока', 'type': 'string'},
         {'code': 'SUCCESS', 'name': 'Решение принято? Y = Да, N = Нет', 'type': 'boolean'},
+        {'code': 'ASKED', 'name': 'У студента есть доп вопросы? Y = Да, N = Нет', 'type': 'boolean'},
         ],
         'example': '/answer [Петр] [Базовые функции PHP] [Y]'
     }
@@ -160,12 +167,15 @@ def hist(userId, txt):
     if(k == len(command['args'])):
         #генерим
         success = history['SUCCESS'] == 'Y'
+        asked = history['ASKED'] == 'Y'
         for key in dictionary:
             #print(key)
             part = choice(dictionary[key])
 
             if(success and key == 'result_neg' or not success and key == 'result_good'):
                 continue;
+            if(not asked and key == 'asks'):
+                continue
 
             for i in history:
                 repl = ''
