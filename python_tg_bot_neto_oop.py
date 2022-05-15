@@ -41,8 +41,8 @@ class Env:
         dbPath = os.environ.get('dbPath')
         self.token = os.environ.get('token_oop')
 
-        self.client =  MongoClient(f'mongodb+srv://{dbLogin}:{dbPassword}@{dbPath}/retryWrites=true&w=majority')
-        print(self.client)
+        self.client =  Client(dbLogin, dbPassword, dbPath)
+        #print(self.client)
 
     def isCommand(self, txt):
         isCommand = False
@@ -75,6 +75,10 @@ class Env:
             h = {}
         return h
 
+class Client:
+    client = None
+    def __init__(self, dbLogin, dbPassword, dbPath):
+        self.client =  MongoClient(f'mongodb+srv://{dbLogin}:{dbPassword}@{dbPath}/retryWrites=true&w=majority')
 
 class Bot:
     bot  = None
