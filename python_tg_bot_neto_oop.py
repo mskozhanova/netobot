@@ -16,11 +16,12 @@ import logging
 import pymongo
 from pymongo import MongoClient, InsertOne, UpdateOne
 
+from bson.json_util import loads
+
 
 class Env:
     token = None
     dbClient = None
-    dbBase = None
 
     def __init__(self):
 
@@ -41,9 +42,13 @@ class Env:
         dbPassword = os.environ.get('dbPassword')
         dbPath = os.environ.get('dbPath')
         self.token = os.environ.get('token_oop')
-        self.dbBase = os.environ.get('dbBase')
+        dbBase = os.environ.get('dbBase')
 
-        self.client =  Client(dbLogin, dbPassword, dbPath)
+        self.dbClient =  Client(dbLogin, dbPassword, dbPath, dbBase)
+
+
+
+
         #print(self.client)
 
     def isCommand(self, txt):
@@ -79,8 +84,97 @@ class Env:
 
 class Client:
     client = None
-    def __init__(self, dbLogin, dbPassword, dbPath):
-        self.client =  MongoClient(f'mongodb+srv://{dbLogin}:{dbPassword}@{dbPath}/retryWrites=true&w=majority')
+    data = None
+    def __init__(self, dbLogin, dbPassword, dbPath, dbBase):
+        self.client =  MongoClient(f'mongodb+srv://{dbLogin}:{dbPassword}@{dbPath}')
+        self.data = self.client[dbBase]
+
+        #self.insertCommands()
+        #self.insertResults()
+
+    def insertData(self, dataset, collection):
+        coll = self.data[collection]
+        batch_size = 1000
+        inserts = []
+        count = 0
+
+        for line in dataset:
+            inserts.append(InsertOne(line))
+
+            count += 1
+
+            if count == batch_size:
+                coll.bulk_write(inserts)
+                inserts = []
+                count = 0
+        if inserts:
+            coll.bulk_write(inserts)
+            count = 0
+
+    def insertCommands(self):
+        commands = [
+            {'name': 'help', 'descr' : 'This command shows help.'},
+            {'name' : 'answer', 'descr': 'This command creates an answer. The bot will ask - ', 'args': [
+                {'code': 'NAME', 'name': 'Имя слушателя', 'paramtype': 'string'},
+                {'code': 'BLOCK', 'name': 'Название блока', 'paramtype': 'string'},
+                {'code': 'SUCCESS', 'name': 'Решение принято? Y = Да, N = Нет', 'paramtype': 'boolean'},
+                {'code': 'ASKED', 'name': 'У студента есть доп вопросы? Y = Да, N = Нет', 'paramtype': 'boolean'},
+                ]
+            }
+        ]
+        self.insertData(commands, 'commands')
+
+    def insertResults(self):
+        dictionary = [
+            {'name' : 'greet', 'replies' :  ['#NAME#, здравствуйте!', '#NAME#, добрый день!', '#NAME#, доброго дня!']} ,
+            {'name' : 'thank', 'replies' :   ['Спасибо за выполненное домашнее задание к блоку *#BLOCK#*!',
+                      'Благодарю, что выполнили домашнее задание к блоку *#BLOCK#*!',
+                      'Здорово, что Вы сделали домашнее задание к блоку *#BLOCK#*!',
+                      'Здорово, что Вы выполнили домашнее задание к блоку *#BLOCK#*!',
+                      'Благодарим за выполнение домашнего задания к блоку *#BLOCK#*!',
+                      'Благодарю за выполненную работу к блоку *#BLOCK#*!'
+                      ]},
+            {'name' : 'success', 'replies' :   ['Вы удачно реализовали …',
+                        'Отмечу, что получилось …',
+                        'Вам отлично удалось выполнить…',
+                        'У Вас отлично получилось ...',
+                        'Вам удалось ...',
+                        'Здорово, что вы посмотрели на проблему так-то…  и это позволило…'
+
+                        ]},
+            {'name' : 'improve', 'replies' :   ['Хочу обратить ваше внимание на …',
+                        'Обратите внимание, что …',
+                        'Как специалист хочу предостеречь вас  от …',
+                        'Будьте внимательны - …',
+                        'Примите, пожалуйста, во внимание, что …',
+                        'В дальнейшем вы можете…',
+                        'Также советую обратить внимание на…'
+                        ]},
+            {'name' : 'asks', 'replies' :   [
+                'Отвечаю на Ваш вопрос - ...',
+                'Ответ на Ваш вопрос - ',
+                'Позвольте ответить на вопрос - ',
+                'Вопрос интересный, вот ответ - '
+            ]},
+            {'name' : 'result_good', 'replies' :   [
+                'Желаю удачи в воплощении вашего проекта!',
+                'Удачи в дальнейшем обучении!',
+                'Продолжайте в том же духе!',
+                'Зачет!',
+                'Вы проделали отличную работу!'
+            ]},
+           {'name' : 'result_neg', 'replies' :   [
+                'Пожалуйста, внесите исправления в решение.',
+                'Исправьте, пожалуйста, замечания, указанные выше.',
+                'Пожалуйста, выполните исправления.',
+                'Пожалуйста, доработайте свое решение.',
+                'Пока работа требует доработки. ',
+                'Внесите, пожалуйста, правки.'
+            ]}
+
+            ]
+        self.insertData(dictionary, 'dictionary')
+
 
 class Bot:
     bot  = None
