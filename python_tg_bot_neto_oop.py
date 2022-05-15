@@ -89,8 +89,11 @@ class Bot:
 
         commands = self.getCommands()
         arr = []
-        for cmd in commands:
-            command = commands[cmd]
+        for i in range(0, len(commands)):
+
+            command = commands[i]
+            cmd = command['name']
+
             descr = '' if 'descr' not in command else command['descr']
             args = [] if 'args' not in command else command['args']
 
@@ -112,17 +115,16 @@ class Bot:
         self.bot.set_my_commands(arr)
 
     def getCommands(self):
-        commands = {
-            'help' : {'descr' : 'This command shows help.'},
-            'answer': {'descr': 'This command creates an answer. The bot will ask - ', 'args': [
+        commands = [
+            {'name': 'help', 'descr' : 'This command shows help.'},
+            {'name' : 'answer', 'descr': 'This command creates an answer. The bot will ask - ', 'args': [
                 {'code': 'NAME', 'name': 'Имя слушателя', 'paramtype': 'string'},
                 {'code': 'BLOCK', 'name': 'Название блока', 'paramtype': 'string'},
                 {'code': 'SUCCESS', 'name': 'Решение принято? Y = Да, N = Нет', 'paramtype': 'boolean'},
                 {'code': 'ASKED', 'name': 'У студента есть доп вопросы? Y = Да, N = Нет', 'paramtype': 'boolean'},
                 ]
             }
-        }
-
+        ]
         #commandsStr = json.JSONEncoder().encode(commands)
 
         #print( commandsStr)
@@ -324,8 +326,10 @@ class Result:
     parts = {}
     def __init__(self):
         dictionary = self.getDictionary()
-        for key in dictionary:
-            self.parts[key] = ResultPart(key, dictionary[key])
+        for i in range(0, len(dictionary)):
+            d = dictionary[i]
+            key = d['name']
+            self.parts[key] = ResultPart(key, d['replies'])
 
     def getResult(self, hist):
 
@@ -354,57 +358,55 @@ class Result:
         return ans
 
     def getDictionary(self):
-        dictionary = {
-            'greet': ['#NAME#, здравствуйте!', '#NAME#, добрый день!', '#NAME#, доброго дня!'],
-            'thank': ['Спасибо за выполненное домашнее задание к блоку *#BLOCK#*!',
+        dictionary = [
+            {'name' : 'greet', 'replies' :  ['#NAME#, здравствуйте!', '#NAME#, добрый день!', '#NAME#, доброго дня!']} ,
+            {'name' : 'thank', 'replies' :   ['Спасибо за выполненное домашнее задание к блоку *#BLOCK#*!',
                       'Благодарю, что выполнили домашнее задание к блоку *#BLOCK#*!',
                       'Здорово, что Вы сделали домашнее задание к блоку *#BLOCK#*!',
                       'Здорово, что Вы выполнили домашнее задание к блоку *#BLOCK#*!',
                       'Благодарим за выполнение домашнего задания к блоку *#BLOCK#*!',
                       'Благодарю за выполненную работу к блоку *#BLOCK#*!'
-                      ],
-            'success': ['Вы удачно реализовали …',
+                      ]},
+            {'name' : 'success', 'replies' :   ['Вы удачно реализовали …',
                         'Отмечу, что получилось …',
                         'Вам отлично удалось выполнить…',
                         'У Вас отлично получилось ...',
                         'Вам удалось ...',
                         'Здорово, что вы посмотрели на проблему так-то…  и это позволило…'
 
-                        ],
-            'improve': ['Хочу обратить ваше внимание на …',
+                        ]},
+            {'name' : 'improve', 'replies' :   ['Хочу обратить ваше внимание на …',
                         'Обратите внимание, что …',
                         'Как специалист хочу предостеречь вас  от …',
                         'Будьте внимательны - …',
                         'Примите, пожалуйста, во внимание, что …',
                         'В дальнейшем вы можете…',
                         'Также советую обратить внимание на…'
-                        ],
-            'asks': [
+                        ]},
+            {'name' : 'asks', 'replies' :   [
                 'Отвечаю на Ваш вопрос - ...',
                 'Ответ на Ваш вопрос - ',
                 'Позвольте ответить на вопрос - ',
                 'Вопрос интересный, вот ответ - '
-            ],
-            'result_good': [
+            ]},
+            {'name' : 'result_good', 'replies' :   [
                 'Желаю удачи в воплощении вашего проекта!',
                 'Удачи в дальнейшем обучении!',
                 'Продолжайте в том же духе!',
                 'Зачет!',
                 'Вы проделали отличную работу!'
-            ],
-            'result_neg': [
+            ]},
+           {'name' : 'result_neg', 'replies' :   [
                 'Пожалуйста, внесите исправления в решение.',
                 'Исправьте, пожалуйста, замечания, указанные выше.',
                 'Пожалуйста, выполните исправления.',
                 'Пожалуйста, доработайте свое решение.',
                 'Пока работа требует доработки. ',
                 'Внесите, пожалуйста, правки.'
-            ]
-        }
+            ]}
 
-        # dictionaryStr = json.JSONEncoder().encode(dictionary)
-        # print(dictionaryStr)
-        # dictionary = os.environ.get('dictionary')
+            ]
+
 
         return dictionary
 
