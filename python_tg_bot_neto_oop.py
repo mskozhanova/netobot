@@ -80,7 +80,6 @@ class Bot:
     bot  = None
     commands = {}
     def __init__(self, token):
-
         bot = telebot.TeleBot(token)
         self.bot = bot
 
@@ -417,8 +416,6 @@ class ResultPart:
 
 
 envObj = Env()
-
-
 botObj = Bot(envObj.token)
 resultObj = Result()
 
