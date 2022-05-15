@@ -20,6 +20,7 @@ from pymongo import MongoClient, InsertOne, UpdateOne
 class Env:
     token = None
     dbClient = None
+    dbBase = None
 
     def __init__(self):
 
@@ -40,6 +41,7 @@ class Env:
         dbPassword = os.environ.get('dbPassword')
         dbPath = os.environ.get('dbPath')
         self.token = os.environ.get('token_oop')
+        self.dbBase = os.environ.get('dbBase')
 
         self.client =  Client(dbLogin, dbPassword, dbPath)
         #print(self.client)
